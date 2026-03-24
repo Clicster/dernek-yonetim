@@ -87,7 +87,7 @@ export default function Navbar() {
               <span className="text-white font-bold text-sm">D</span>
             </div>
             <span className="text-white font-semibold text-lg tracking-tight hidden sm:block">
-              Dernek Takip
+              TPD İstatistik
             </span>
           </Link>
 

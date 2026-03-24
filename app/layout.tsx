@@ -4,8 +4,8 @@ import Navbar from "@/components/Navbar";
 import { AyProvider } from "@/lib/ay-context";
 
 export const metadata: Metadata = {
-  title: "Dernek Takip",
-  description: "CHD ve Treachery dernek yönetim ve takip sistemi",
+  title: "TPD İstatistik",
+  description: "TPD İstatistik Yönetim Ekibinin düzenlediği web sitesi",
 };
 
 export default function RootLayout({
