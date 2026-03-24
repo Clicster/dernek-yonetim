@@ -16,6 +16,7 @@ function NavItem({
   active,
   activeClass,
   allowed,
+  isLoggedIn,
   router,
 }: {
   label: string;
@@ -23,12 +24,14 @@ function NavItem({
   active: boolean;
   activeClass: string;
   allowed: boolean;
+  isLoggedIn: boolean;
   router: AppRouterInstance;
 }) {
   const handleClick = (e: React.MouseEvent) => {
     if (!allowed) {
       e.preventDefault();
-      router.push("/giris");
+      // Giriş yapmamışsa → giriş sayfasına, yapmışsa → erişim yok sayfasına
+      router.push(isLoggedIn ? "/erisim-yok" : "/giris");
     }
   };
 
@@ -118,6 +121,7 @@ export default function Navbar() {
               active={pathname.startsWith("/chd")}
               activeClass="bg-blue-600 text-white"
               allowed={canSeeDernek}
+              isLoggedIn={isLoggedIn}
               router={router}
             />
             <NavItem
@@ -126,6 +130,7 @@ export default function Navbar() {
               active={pathname.startsWith("/treachery")}
               activeClass="bg-red-600 text-white"
               allowed={canSeeDernek}
+              isLoggedIn={isLoggedIn}
               router={router}
             />
 
@@ -136,6 +141,7 @@ export default function Navbar() {
               active={pathname.startsWith("/yonetim-sure")}
               activeClass="bg-emerald-600 text-white"
               allowed={canSeeYonetim}
+              isLoggedIn={isLoggedIn}
               router={router}
             />
 
@@ -146,6 +152,7 @@ export default function Navbar() {
               active={pathname.startsWith("/konsey-sure")}
               activeClass="bg-purple-600 text-white"
               allowed={canSeeKonsey}
+              isLoggedIn={isLoggedIn}
               router={router}
             />
 

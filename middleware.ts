@@ -25,18 +25,16 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // Yönetim Süre — viewer + admin
+  // Yönetim Süre — yetkili kullanıcılar
   if (pathname.startsWith("/yonetim-sure")) {
-    if (!user || !user.canSeeYonetimSure) {
-      return NextResponse.redirect(new URL("/giris", request.url));
-    }
+    if (!user) return NextResponse.redirect(new URL("/giris", request.url));
+    if (!user.canSeeYonetimSure) return NextResponse.redirect(new URL("/erisim-yok", request.url));
   }
 
-  // Konsey Süre — viewer + admin
+  // Konsey Süre — yetkili kullanıcılar
   if (pathname.startsWith("/konsey-sure")) {
-    if (!user || !user.canSeeKonseySure) {
-      return NextResponse.redirect(new URL("/giris", request.url));
-    }
+    if (!user) return NextResponse.redirect(new URL("/giris", request.url));
+    if (!user.canSeeKonseySure) return NextResponse.redirect(new URL("/erisim-yok", request.url));
   }
 
   // Dernek sayfaları — giriş zorunlu, viewer kullanıcılar göremez
