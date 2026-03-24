@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { USERS, SESSION_COOKIE, VERIFY_COOKIE } from "@/lib/auth";
+import { SESSION_COOKIE, VERIFY_COOKIE } from "@/lib/auth";
 import { readData, writeData } from "@/lib/server-store";
 
 export async function POST() {
@@ -20,10 +20,6 @@ export async function POST() {
     code = parsed.code;
   } catch {
     return NextResponse.json({ error: "Geçersiz oturum. Tekrar dene." }, { status: 400 });
-  }
-
-  if (!USERS[username]) {
-    return NextResponse.json({ error: "Bu Habbo adı sisteme kayıtlı değil." }, { status: 403 });
   }
 
   // Habbo API'den motto kontrolü
