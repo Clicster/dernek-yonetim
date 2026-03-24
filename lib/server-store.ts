@@ -36,6 +36,7 @@ const defaultData: AppData = {
   yonetimSure: [],
   konseySure: [],
   verifiedKullanicilar: [],
+  kullaniciSifreleri: {},
 };
 
 function migrateData(raw: unknown): AppData {

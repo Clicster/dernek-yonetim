@@ -88,6 +88,7 @@ export interface AppData {
   yonetimSure: SureKisi[];
   konseySure: SureKisi[];
   verifiedKullanicilar: string[];
+  kullaniciSifreleri: Record<string, string>;
 }
 
 export type DernekKey = "chd" | "treachery";

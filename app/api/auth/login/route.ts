@@ -13,11 +13,13 @@ export async function POST() {
 
   let username: string;
   let code: string;
+  let passwordHash: string;
 
   try {
-    const parsed = JSON.parse(verifyCookie.value) as { username: string; code: string };
+    const parsed = JSON.parse(verifyCookie.value) as { username: string; code: string; passwordHash: string };
     username = parsed.username;
     code = parsed.code;
+    passwordHash = parsed.passwordHash;
   } catch {
     return NextResponse.json({ error: "Geçersiz oturum. Tekrar dene." }, { status: 400 });
   }
@@ -43,13 +45,15 @@ export async function POST() {
     return NextResponse.json({ error: "Habbo sunucusuna ulaşılamadı. İnternet bağlantını kontrol et." }, { status: 500 });
   }
 
-  // Başarılı — kullanıcıyı doğrulanmışlar listesine ekle
+  // Başarılı — kullanıcıyı doğrulanmışlar listesine ekle + şifre kaydet
   const appData = await readData();
   if (!appData.verifiedKullanicilar) appData.verifiedKullanicilar = [];
+  if (!appData.kullaniciSifreleri) appData.kullaniciSifreleri = {};
   if (!appData.verifiedKullanicilar.includes(username)) {
     appData.verifiedKullanicilar.push(username);
-    await writeData(appData);
   }
+  appData.kullaniciSifreleri[username] = passwordHash;
+  await writeData(appData);
 
   // Session oluştur
   cookieStore.set(SESSION_COOKIE, JSON.stringify({ username }), {

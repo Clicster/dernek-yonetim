@@ -9,6 +9,7 @@ export default function GirisPage() {
   const router = useRouter();
   const [step, setStep] = useState<Step>("username");
   const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -23,7 +24,7 @@ export default function GirisPage() {
       const res = await fetch("/api/auth/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: username.trim() }),
+        body: JSON.stringify({ username: username.trim(), password: password.trim() }),
       });
       const data = await res.json() as { code?: string; error?: string; alreadyVerified?: boolean };
 
@@ -91,6 +92,17 @@ export default function GirisPage() {
                 className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors"
                 required
                 autoFocus
+              />
+            </div>
+            <div>
+              <label className="block text-gray-400 text-sm mb-1.5">Şifre</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => { setPassword(e.target.value); setError(""); }}
+                placeholder="Şifreni yaz"
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors"
+                required
               />
             </div>
 
