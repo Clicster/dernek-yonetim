@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { getUserPerms, VERIFY_COOKIE, SESSION_COOKIE } from "@/lib/auth";
+import { normalizeUsername, VERIFY_COOKIE, SESSION_COOKIE } from "@/lib/auth";
 import { readData } from "@/lib/server-store";
 
 function randomCode() {
@@ -14,8 +14,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Habbo kullanıcı adı boş olamaz." }, { status: 400 });
   }
 
-  const cleanUsername = username.trim();
-  getUserPerms(cleanUsername); // herkes girebilir, yetkiler sonra belirlenir
+  // Canonical username kullan (USERS'da varsa onun halini, yoksa girileni)
+  const cleanUsername = normalizeUsername(username.trim());
 
   // Daha önce doğrulanmış mı kontrol et
   const data = await readData();

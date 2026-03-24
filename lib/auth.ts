@@ -56,7 +56,22 @@ export const DEFAULT_PERMS: UserDef = {
 };
 
 export function getUserPerms(username: string): UserDef {
-  return USERS[username] ?? DEFAULT_PERMS;
+  // Önce birebir eşleşme dene
+  if (USERS[username]) return USERS[username];
+  // Büyük/küçük harf duyarsız eşleşme
+  const key = Object.keys(USERS).find(
+    (k) => k.toLowerCase() === username.toLowerCase()
+  );
+  return key ? USERS[key] : DEFAULT_PERMS;
+}
+
+// Canonical username döndürür (USERS'daki asıl halini)
+export function normalizeUsername(username: string): string {
+  if (USERS[username]) return username;
+  const key = Object.keys(USERS).find(
+    (k) => k.toLowerCase() === username.toLowerCase()
+  );
+  return key ?? username;
 }
 
 export const SESSION_COOKIE = "dernek_session";
