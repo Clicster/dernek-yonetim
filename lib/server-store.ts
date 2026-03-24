@@ -33,6 +33,8 @@ const defaultDernekData = () => ({
 const defaultData: AppData = {
   chd: defaultDernekData(),
   treachery: defaultDernekData(),
+  yonetimSure: [],
+  konseySure: [],
 };
 
 function migrateData(raw: unknown): AppData {
@@ -81,6 +83,10 @@ function migrateData(raw: unknown): AppData {
       return { id: y.id, ad: y.ad, rol: y.rol, aylar };
     });
   }
+
+  // Yeni alanları ekle (yoksa)
+  if (!data.yonetimSure) (data as Record<string, unknown>).yonetimSure = [];
+  if (!data.konseySure) (data as Record<string, unknown>).konseySure = [];
 
   return data as unknown as AppData;
 }

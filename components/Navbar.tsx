@@ -2,32 +2,38 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { isAuthenticated, logout } from "@/lib/store";
 import { useEffect, useState } from "react";
 import { useAy } from "@/lib/ay-context";
 import { AYLAR } from "@/lib/types";
+import type { UserDef } from "@/lib/auth";
+
+type UserInfo = (UserDef & { username: string }) | { username: null };
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const [authed, setAuthed] = useState(false);
   const { ay, setAy } = useAy();
+  const [user, setUser] = useState<UserInfo>({ username: null });
 
   useEffect(() => {
-    setAuthed(isAuthenticated());
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((data: UserInfo) => setUser(data))
+      .catch(() => setUser({ username: null }));
   }, [pathname]);
 
-  const handleLogout = () => {
-    logout();
-    setAuthed(false);
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    setUser({ username: null });
     router.push("/");
+    router.refresh();
   };
 
-  const links = [
-    { href: "/chd", label: "CHD", color: "bg-blue-600" },
-    { href: "/treachery", label: "Treachery", color: "bg-red-600" },
-    { href: "/admin", label: "Admin", color: "bg-indigo-600" },
-  ];
+  const isLoggedIn = !!user.username;
+  const canSeeDernek = !isLoggedIn || (user as UserDef).canSeeDernek;
+  const canSeeYonetim = isLoggedIn && (user as UserDef).canSeeYonetimSure;
+  const canSeeKonsey = isLoggedIn && (user as UserDef).canSeeKonseySure;
+  const canSeeAdmin = isLoggedIn && (user as UserDef).canSeeAdmin;
 
   return (
     <nav className="bg-gray-900 border-b border-gray-700 sticky top-0 z-50">
@@ -63,26 +69,93 @@ export default function Navbar() {
 
           {/* Linkler */}
           <div className="flex items-center gap-1 shrink-0">
-            {links.map((link) => (
+            {/* Dernekler */}
+            {canSeeDernek && (
+              <>
+                <Link
+                  href="/chd"
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    pathname.startsWith("/chd")
+                      ? "bg-blue-600 text-white"
+                      : "text-gray-300 hover:text-white hover:bg-gray-700"
+                  }`}
+                >
+                  CHD
+                </Link>
+                <Link
+                  href="/treachery"
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    pathname.startsWith("/treachery")
+                      ? "bg-red-600 text-white"
+                      : "text-gray-300 hover:text-white hover:bg-gray-700"
+                  }`}
+                >
+                  Treachery
+                </Link>
+              </>
+            )}
+
+            {/* Yönetim Süre */}
+            {canSeeYonetim && (
               <Link
-                key={link.href}
-                href={link.href}
+                href="/yonetim-sure"
                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  pathname.startsWith(link.href)
-                    ? `${link.color} text-white`
+                  pathname.startsWith("/yonetim-sure")
+                    ? "bg-emerald-600 text-white"
                     : "text-gray-300 hover:text-white hover:bg-gray-700"
                 }`}
               >
-                {link.label}
+                Yönetim Süre
               </Link>
-            ))}
-            {authed && (
+            )}
+
+            {/* Konsey Süre */}
+            {canSeeKonsey && (
+              <Link
+                href="/konsey-sure"
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  pathname.startsWith("/konsey-sure")
+                    ? "bg-purple-600 text-white"
+                    : "text-gray-300 hover:text-white hover:bg-gray-700"
+                }`}
+              >
+                Konsey Süre
+              </Link>
+            )}
+
+            {/* Admin */}
+            {canSeeAdmin && (
+              <Link
+                href="/admin/dashboard"
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  pathname.startsWith("/admin")
+                    ? "bg-indigo-600 text-white"
+                    : "text-gray-300 hover:text-white hover:bg-gray-700"
+                }`}
+              >
+                Admin
+              </Link>
+            )}
+
+            {/* Giriş / Çıkış */}
+            {isLoggedIn ? (
               <button
                 onClick={handleLogout}
                 className="ml-1 px-3 py-2 rounded-md text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
               >
                 Çıkış
               </button>
+            ) : (
+              <Link
+                href="/giris"
+                className={`ml-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  pathname === "/giris"
+                    ? "bg-indigo-600 text-white"
+                    : "text-gray-400 hover:text-white hover:bg-gray-700"
+                }`}
+              >
+                Giriş
+              </Link>
             )}
           </div>
 

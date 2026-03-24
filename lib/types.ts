@@ -61,6 +61,15 @@ export interface Yonetici {
   id: string;
   ad: string;
   rol: string;
+  habboismi?: string; // Habbo kullanıcı adı (çapraz eşleştirme için)
+  aylar: Record<Ay, AylikVeri>;
+}
+
+export interface SureKisi {
+  id: string;
+  ad: string;
+  rol: string;
+  habboismi: string;
   aylar: Record<Ay, AylikVeri>;
 }
 
@@ -76,6 +85,8 @@ export interface DernekData {
 export interface AppData {
   chd: DernekData;
   treachery: DernekData;
+  yonetimSure: SureKisi[];
+  konseySure: SureKisi[];
 }
 
 export type DernekKey = "chd" | "treachery";
