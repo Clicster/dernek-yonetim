@@ -85,26 +85,6 @@ export default function Home() {
         </Link>
       </div>
 
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-        <h3 className="text-lg font-semibold text-white mb-3">Hızlı Erişim</h3>
-        <div className="flex flex-wrap gap-3">
-          <Link href="/chd#uyelikler" className="px-4 py-2 bg-blue-600/20 text-blue-400 rounded-lg hover:bg-blue-600/30 transition-colors text-sm">
-            CHD Üyelikler
-          </Link>
-          <Link href="/chd#ikramiyeler" className="px-4 py-2 bg-blue-600/20 text-blue-400 rounded-lg hover:bg-blue-600/30 transition-colors text-sm">
-            CHD İkramiyeler
-          </Link>
-          <Link href="/treachery#uyelikler" className="px-4 py-2 bg-red-600/20 text-red-400 rounded-lg hover:bg-red-600/30 transition-colors text-sm">
-            Treachery Üyelikler
-          </Link>
-          <Link href="/treachery#ikramiyeler" className="px-4 py-2 bg-red-600/20 text-red-400 rounded-lg hover:bg-red-600/30 transition-colors text-sm">
-            Treachery İkramiyeler
-          </Link>
-          <Link href="/admin" className="px-4 py-2 bg-indigo-600/20 text-indigo-400 rounded-lg hover:bg-indigo-600/30 transition-colors text-sm">
-            Admin Paneli
-          </Link>
-        </div>
-      </div>
     </div>
   );
 }
