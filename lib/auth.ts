@@ -46,5 +46,18 @@ export const USERS: Record<string, UserDef> = {
   },
 };
 
+// Listede olmayan kullanıcılar için varsayılan yetki — sadece dernekler
+export const DEFAULT_PERMS: UserDef = {
+  role: "viewer",
+  canSeeDernek: true,
+  canSeeYonetimSure: false,
+  canSeeKonseySure: false,
+  canSeeAdmin: false,
+};
+
+export function getUserPerms(username: string): UserDef {
+  return USERS[username] ?? DEFAULT_PERMS;
+}
+
 export const SESSION_COOKIE = "dernek_session";
 export const VERIFY_COOKIE = "dernek_verify";

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { USERS, VERIFY_COOKIE, SESSION_COOKIE } from "@/lib/auth";
+import { getUserPerms, VERIFY_COOKIE, SESSION_COOKIE } from "@/lib/auth";
 import { readData } from "@/lib/server-store";
 
 function randomCode() {
@@ -10,34 +10,37 @@ function randomCode() {
 export async function POST(request: Request) {
   const { username } = await request.json() as { username: string };
 
-  if (!username || !USERS[username]) {
-    return NextResponse.json({ error: "Bu Habbo adı sisteme kayıtlı değil." }, { status: 403 });
+  if (!username || !username.trim()) {
+    return NextResponse.json({ error: "Habbo kullanıcı adı boş olamaz." }, { status: 400 });
   }
+
+  const cleanUsername = username.trim();
+  getUserPerms(cleanUsername); // herkes girebilir, yetkiler sonra belirlenir
 
   // Daha önce doğrulanmış mı kontrol et
   const data = await readData();
-  const alreadyVerified = (data.verifiedKullanicilar ?? []).includes(username);
+  const alreadyVerified = (data.verifiedKullanicilar ?? []).includes(cleanUsername);
 
   if (alreadyVerified) {
-    // Direkt session oluştur — kod istemeden giriş yap
+    // Direkt session oluştur
     const cookieStore = await cookies();
-    cookieStore.set(SESSION_COOKIE, JSON.stringify({ username }), {
+    cookieStore.set(SESSION_COOKIE, JSON.stringify({ username: cleanUsername }), {
       httpOnly: true,
       path: "/",
-      maxAge: 60 * 60 * 24 * 365 * 10, // kalıcı
+      maxAge: 60 * 60 * 24 * 365 * 10,
       sameSite: "lax",
     });
-    return NextResponse.json({ ok: true, alreadyVerified: true, username });
+    return NextResponse.json({ ok: true, alreadyVerified: true, username: cleanUsername });
   }
 
   // İlk giriş — kod doğrulama gerekli
   const code = randomCode();
   const cookieStore = await cookies();
 
-  cookieStore.set(VERIFY_COOKIE, JSON.stringify({ username, code }), {
+  cookieStore.set(VERIFY_COOKIE, JSON.stringify({ username: cleanUsername, code }), {
     httpOnly: true,
     path: "/",
-    maxAge: 600, // 10 dakika
+    maxAge: 600,
     sameSite: "lax",
   });
 

@@ -165,18 +165,11 @@ export default function Navbar() {
 
             {/* Giriş / Çıkış */}
             {isLoggedIn ? (
-              <div className="ml-2 flex items-center gap-2 bg-gray-800 rounded-lg px-2 py-1">
-                {/* Habbo Avatar */}
-                <img
-                  src={`https://www.habbo.com.tr/habbo-imaging/avatarimage?user=${user.username}&direction=2&head_direction=2&size=s&gesture=nor&action=std&headonly=1`}
-                  alt={user.username ?? ""}
-                  className="w-8 h-8 rounded object-cover"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                />
-                <span className="text-sm font-medium text-white hidden sm:block">{user.username}</span>
+              <div className="ml-2 flex items-center gap-2 bg-gray-800 rounded-lg px-3 py-1.5">
+                <span className="text-sm font-medium text-white">{user.username}</span>
                 <button
                   onClick={handleLogout}
-                  className="ml-1 text-xs text-gray-400 hover:text-red-400 transition-colors"
+                  className="text-xs text-gray-400 hover:text-red-400 transition-colors"
                   title="Çıkış yap"
                 >
                   ✕

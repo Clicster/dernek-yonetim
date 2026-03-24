@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { USERS, SESSION_COOKIE } from "@/lib/auth";
+import { getUserPerms, SESSION_COOKIE } from "@/lib/auth";
 
 function getUser(request: NextRequest) {
   const sessionCookie = request.cookies.get(SESSION_COOKIE);
   if (!sessionCookie) return null;
   try {
     const { username } = JSON.parse(sessionCookie.value) as { username: string };
-    const userDef = USERS[username];
-    if (!userDef) return null;
-    return { username, ...userDef };
+    if (!username) return null;
+    return { username, ...getUserPerms(username) };
   } catch {
     return null;
   }

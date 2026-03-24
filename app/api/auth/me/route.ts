@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { USERS, SESSION_COOKIE } from "@/lib/auth";
+import { getUserPerms, SESSION_COOKIE } from "@/lib/auth";
 
 export async function GET() {
   const cookieStore = await cookies();
@@ -12,9 +12,9 @@ export async function GET() {
 
   try {
     const { username } = JSON.parse(sessionCookie.value) as { username: string };
-    const userDef = USERS[username];
-    if (!userDef) return NextResponse.json({ username: null });
-    return NextResponse.json({ username, ...userDef });
+    if (!username) return NextResponse.json({ username: null });
+    const perms = getUserPerms(username);
+    return NextResponse.json({ username, ...perms });
   } catch {
     return NextResponse.json({ username: null });
   }
