@@ -55,7 +55,7 @@ export default function GirisPage() {
       if (!res.ok) {
         setError(data.error ?? "Doğrulama başarısız.");
       } else {
-        router.push("/admin/dashboard");
+        router.push("/");
         router.refresh();
       }
     } catch {
