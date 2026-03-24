@@ -50,7 +50,7 @@ export async function POST() {
   cookieStore.set(SESSION_COOKIE, JSON.stringify({ username }), {
     httpOnly: true,
     path: "/",
-    maxAge: 60 * 60 * 24 * 7, // 7 gün
+    maxAge: 60 * 60 * 24 * 365 * 10, // kalıcı (10 yıl)
     sameSite: "lax",
   });
 
