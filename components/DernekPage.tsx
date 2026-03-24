@@ -24,7 +24,7 @@ type AktifTab = "uyelikler" | "ikramiyeler" | "ekstralar" | "coinler" | "yonetic
 export default function DernekPage({ dernekKey, title, color }: Props) {
   const [data, setData] = useState<DernekData | null>(null);
   const [activeTab, setActiveTab] = useState<AktifTab>("uyelikler");
-  const { ay: secilenAy, ayIndex, yil } = useAy();
+  const { ay: secilenAy, setAy, ayIndex, yil } = useAy();
 
   useEffect(() => {
     getData().then((d) => setData(d[dernekKey]));
@@ -72,6 +72,23 @@ export default function DernekPage({ dernekKey, title, color }: Props) {
           <h1 className="text-3xl font-bold text-white">{title}</h1>
           <p className="text-gray-400 text-sm">Dernek istatistikleri ve yönetim bilgileri</p>
         </div>
+      </div>
+
+      {/* Ay Seçici */}
+      <div className="flex items-center gap-1 flex-wrap">
+        {AYLAR.map((a) => (
+          <button
+            key={a}
+            onClick={() => setAy(a)}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              secilenAy === a
+                ? color === "blue" ? "bg-blue-600 text-white" : "bg-red-600 text-white"
+                : "text-gray-400 hover:text-white hover:bg-gray-800"
+            }`}
+          >
+            {a.slice(0, 3)}
+          </button>
+        ))}
       </div>
 
       {/* Özet Kartlar */}

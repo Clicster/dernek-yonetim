@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useAy } from "@/lib/ay-context";
-import { AYLAR } from "@/lib/types";
 import type { UserDef } from "@/lib/auth";
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
@@ -55,7 +53,6 @@ function NavItem({
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { ay, setAy } = useAy();
   const [user, setUser] = useState<UserInfo>({ username: null });
 
   useEffect(() => {
@@ -94,22 +91,7 @@ export default function Navbar() {
             </span>
           </Link>
 
-          {/* Ay Seçici */}
-          <div className="flex items-center gap-1 overflow-x-auto scrollbar-none flex-1 justify-center">
-            {AYLAR.map((a) => (
-              <button
-                key={a}
-                onClick={() => setAy(a)}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors shrink-0 ${
-                  ay === a
-                    ? "bg-indigo-600 text-white"
-                    : "text-gray-400 hover:text-white hover:bg-gray-700"
-                }`}
-              >
-                {a.slice(0, 3)}
-              </button>
-            ))}
-          </div>
+          <div className="flex-1" />
 
           {/* Linkler */}
           <div className="flex items-center gap-1 shrink-0">
