@@ -40,9 +40,12 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // Dernek sayfaları — viewer kullanıcılar göremez
+  // Dernek sayfaları — giriş zorunlu, viewer kullanıcılar göremez
   if (pathname.startsWith("/chd") || pathname.startsWith("/treachery")) {
-    if (user && !user.canSeeDernek) {
+    if (!user) {
+      return NextResponse.redirect(new URL("/giris", request.url));
+    }
+    if (!user.canSeeDernek) {
       return NextResponse.redirect(new URL("/erisim-yok", request.url));
     }
   }

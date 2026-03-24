@@ -6,8 +6,48 @@ import { useEffect, useState } from "react";
 import { useAy } from "@/lib/ay-context";
 import { AYLAR } from "@/lib/types";
 import type { UserDef } from "@/lib/auth";
+import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
 type UserInfo = (UserDef & { username: string }) | { username: null };
+
+function NavItem({
+  label,
+  href,
+  active,
+  activeClass,
+  allowed,
+  router,
+}: {
+  label: string;
+  href: string;
+  active: boolean;
+  activeClass: string;
+  allowed: boolean;
+  router: AppRouterInstance;
+}) {
+  const handleClick = (e: React.MouseEvent) => {
+    if (!allowed) {
+      e.preventDefault();
+      router.push("/giris");
+    }
+  };
+
+  return (
+    <Link
+      href={href}
+      onClick={handleClick}
+      className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+        active && allowed
+          ? activeClass
+          : allowed
+          ? "text-gray-300 hover:text-white hover:bg-gray-700"
+          : "text-gray-500 hover:text-gray-300 hover:bg-gray-800 cursor-pointer"
+      }`}
+    >
+      {label}
+    </Link>
+  );
+}
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -30,7 +70,8 @@ export default function Navbar() {
   };
 
   const isLoggedIn = !!user.username;
-  const canSeeDernek = !isLoggedIn || (user as UserDef).canSeeDernek;
+  // Giriş yapılmamışsa false → NavItem /giris'e yönlendirir
+  const canSeeDernek = isLoggedIn && (user as UserDef).canSeeDernek;
   const canSeeYonetim = isLoggedIn && (user as UserDef).canSeeYonetimSure;
   const canSeeKonsey = isLoggedIn && (user as UserDef).canSeeKonseySure;
   const canSeeAdmin = isLoggedIn && (user as UserDef).canSeeAdmin;
@@ -69,59 +110,44 @@ export default function Navbar() {
 
           {/* Linkler */}
           <div className="flex items-center gap-1 shrink-0">
-            {/* Dernekler */}
-            {canSeeDernek && (
-              <>
-                <Link
-                  href="/chd"
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    pathname.startsWith("/chd")
-                      ? "bg-blue-600 text-white"
-                      : "text-gray-300 hover:text-white hover:bg-gray-700"
-                  }`}
-                >
-                  CHD
-                </Link>
-                <Link
-                  href="/treachery"
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    pathname.startsWith("/treachery")
-                      ? "bg-red-600 text-white"
-                      : "text-gray-300 hover:text-white hover:bg-gray-700"
-                  }`}
-                >
-                  Treachery
-                </Link>
-              </>
-            )}
 
-            {/* Yönetim Süre */}
-            {canSeeYonetim && (
-              <Link
-                href="/yonetim-sure"
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  pathname.startsWith("/yonetim-sure")
-                    ? "bg-emerald-600 text-white"
-                    : "text-gray-300 hover:text-white hover:bg-gray-700"
-                }`}
-              >
-                Yönetim Süre
-              </Link>
-            )}
+            {/* Dernekler — her zaman görünür */}
+            <NavItem
+              label="CHD"
+              href="/chd"
+              active={pathname.startsWith("/chd")}
+              activeClass="bg-blue-600 text-white"
+              allowed={canSeeDernek}
+              router={router}
+            />
+            <NavItem
+              label="Treachery"
+              href="/treachery"
+              active={pathname.startsWith("/treachery")}
+              activeClass="bg-red-600 text-white"
+              allowed={canSeeDernek}
+              router={router}
+            />
 
-            {/* Konsey Süre */}
-            {canSeeKonsey && (
-              <Link
-                href="/konsey-sure"
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  pathname.startsWith("/konsey-sure")
-                    ? "bg-purple-600 text-white"
-                    : "text-gray-300 hover:text-white hover:bg-gray-700"
-                }`}
-              >
-                Konsey Süre
-              </Link>
-            )}
+            {/* Yönetim Süre — her zaman görünür */}
+            <NavItem
+              label="Yönetim Süre"
+              href="/yonetim-sure"
+              active={pathname.startsWith("/yonetim-sure")}
+              activeClass="bg-emerald-600 text-white"
+              allowed={canSeeYonetim}
+              router={router}
+            />
+
+            {/* Konsey Süre — her zaman görünür */}
+            <NavItem
+              label="Konsey Süre"
+              href="/konsey-sure"
+              active={pathname.startsWith("/konsey-sure")}
+              activeClass="bg-purple-600 text-white"
+              allowed={canSeeKonsey}
+              router={router}
+            />
 
             {/* Admin */}
             {canSeeAdmin && (
@@ -139,12 +165,15 @@ export default function Navbar() {
 
             {/* Giriş / Çıkış */}
             {isLoggedIn ? (
-              <button
-                onClick={handleLogout}
-                className="ml-1 px-3 py-2 rounded-md text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
-              >
-                Çıkış
-              </button>
+              <div className="ml-1 flex items-center gap-2">
+                <span className="text-xs text-gray-500 hidden sm:block">{user.username}</span>
+                <button
+                  onClick={handleLogout}
+                  className="px-3 py-2 rounded-md text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
+                >
+                  Çıkış
+                </button>
+              </div>
             ) : (
               <Link
                 href="/giris"
