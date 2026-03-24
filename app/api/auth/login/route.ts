@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { USERS, SESSION_COOKIE, VERIFY_COOKIE } from "@/lib/auth";
+import { readData, writeData } from "@/lib/server-store";
 
 export async function POST() {
   const cookieStore = await cookies();
@@ -46,7 +47,15 @@ export async function POST() {
     return NextResponse.json({ error: "Habbo sunucusuna ulaşılamadı. İnternet bağlantını kontrol et." }, { status: 500 });
   }
 
-  // Başarılı — session oluştur
+  // Başarılı — kullanıcıyı doğrulanmışlar listesine ekle
+  const appData = await readData();
+  if (!appData.verifiedKullanicilar) appData.verifiedKullanicilar = [];
+  if (!appData.verifiedKullanicilar.includes(username)) {
+    appData.verifiedKullanicilar.push(username);
+    await writeData(appData);
+  }
+
+  // Session oluştur
   cookieStore.set(SESSION_COOKIE, JSON.stringify({ username }), {
     httpOnly: true,
     path: "/",

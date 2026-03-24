@@ -87,6 +87,7 @@ export interface AppData {
   treachery: DernekData;
   yonetimSure: SureKisi[];
   konseySure: SureKisi[];
+  verifiedKullanicilar: string[];
 }
 
 export type DernekKey = "chd" | "treachery";

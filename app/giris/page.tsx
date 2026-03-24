@@ -25,10 +25,14 @@ export default function GirisPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: username.trim() }),
       });
-      const data = await res.json() as { code?: string; error?: string };
+      const data = await res.json() as { code?: string; error?: string; alreadyVerified?: boolean };
 
       if (!res.ok) {
         setError(data.error ?? "Bir hata oluştu.");
+      } else if (data.alreadyVerified) {
+        // Daha önce doğrulanmış — direkt giriş
+        router.push("/");
+        router.refresh();
       } else {
         setCode(data.code!);
         setStep("verify");

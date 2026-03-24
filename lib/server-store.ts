@@ -35,6 +35,7 @@ const defaultData: AppData = {
   treachery: defaultDernekData(),
   yonetimSure: [],
   konseySure: [],
+  verifiedKullanicilar: [],
 };
 
 function migrateData(raw: unknown): AppData {
@@ -87,6 +88,7 @@ function migrateData(raw: unknown): AppData {
   // Yeni alanları ekle (yoksa)
   if (!data.yonetimSure) (data as Record<string, unknown>).yonetimSure = [];
   if (!data.konseySure) (data as Record<string, unknown>).konseySure = [];
+  if (!data.verifiedKullanicilar) (data as Record<string, unknown>).verifiedKullanicilar = [];
 
   return data as unknown as AppData;
 }
