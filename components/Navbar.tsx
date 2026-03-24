@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { UserDef } from "@/lib/auth";
-import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
 type UserInfo = (UserDef & { username: string }) | { username: null };
 
@@ -14,35 +13,23 @@ function NavItem({
   active,
   activeClass,
   allowed,
-  isLoggedIn,
-  router,
 }: {
   label: string;
   href: string;
   active: boolean;
   activeClass: string;
   allowed: boolean;
-  isLoggedIn: boolean;
-  router: AppRouterInstance;
 }) {
-  const handleClick = (e: React.MouseEvent) => {
-    if (!allowed) {
-      e.preventDefault();
-      // Giriş yapmamışsa → giriş sayfasına, yapmışsa → erişim yok sayfasına
-      router.push(isLoggedIn ? "/erisim-yok" : "/giris");
-    }
-  };
-
+  // Yönlendirme tamamen middleware'e bırakıldı (server-side, güvenli)
   return (
     <Link
       href={href}
-      onClick={handleClick}
       className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
         active && allowed
           ? activeClass
           : allowed
           ? "text-gray-300 hover:text-white hover:bg-gray-700"
-          : "text-gray-500 hover:text-gray-300 hover:bg-gray-800 cursor-pointer"
+          : "text-gray-500 hover:text-gray-300 hover:bg-gray-800"
       }`}
     >
       {label}
@@ -96,47 +83,15 @@ export default function Navbar() {
           {/* Linkler */}
           <div className="flex items-center gap-1 shrink-0">
 
-            {/* Dernekler — her zaman görünür */}
-            <NavItem
-              label="CHD"
-              href="/chd"
-              active={pathname.startsWith("/chd")}
-              activeClass="bg-blue-600 text-white"
-              allowed={canSeeDernek}
-              isLoggedIn={isLoggedIn}
-              router={router}
-            />
-            <NavItem
-              label="Treachery"
-              href="/treachery"
-              active={pathname.startsWith("/treachery")}
-              activeClass="bg-red-600 text-white"
-              allowed={canSeeDernek}
-              isLoggedIn={isLoggedIn}
-              router={router}
-            />
+            {/* Dernekler */}
+            <NavItem label="CHD" href="/chd" active={pathname.startsWith("/chd")} activeClass="bg-blue-600 text-white" allowed={canSeeDernek} />
+            <NavItem label="Treachery" href="/treachery" active={pathname.startsWith("/treachery")} activeClass="bg-red-600 text-white" allowed={canSeeDernek} />
 
-            {/* Yönetim Süre — her zaman görünür */}
-            <NavItem
-              label="Yönetim Süre"
-              href="/yonetim-sure"
-              active={pathname.startsWith("/yonetim-sure")}
-              activeClass="bg-emerald-600 text-white"
-              allowed={canSeeYonetim}
-              isLoggedIn={isLoggedIn}
-              router={router}
-            />
+            {/* Yönetim Süre */}
+            <NavItem label="Yönetim Süre" href="/yonetim-sure" active={pathname.startsWith("/yonetim-sure")} activeClass="bg-emerald-600 text-white" allowed={canSeeYonetim} />
 
-            {/* Konsey Süre — her zaman görünür */}
-            <NavItem
-              label="Konsey Süre"
-              href="/konsey-sure"
-              active={pathname.startsWith("/konsey-sure")}
-              activeClass="bg-purple-600 text-white"
-              allowed={canSeeKonsey}
-              isLoggedIn={isLoggedIn}
-              router={router}
-            />
+            {/* Konsey Süre */}
+            <NavItem label="Konsey Süre" href="/konsey-sure" active={pathname.startsWith("/konsey-sure")} activeClass="bg-purple-600 text-white" allowed={canSeeKonsey} />
 
             {/* Admin */}
             {canSeeAdmin && (
