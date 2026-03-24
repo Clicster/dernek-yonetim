@@ -38,25 +38,25 @@ export async function requireDernek() {
 export async function requireYonetimSure() {
   const cookieStore = await cookies();
   const val = cookieStore.get(SESSION_COOKIE)?.value;
-  if (!val) redirect("/giris");
+  if (!val) redirect("/erisim-yok");
   try {
     const { username } = JSON.parse(val) as { username?: string };
-    if (!username) redirect("/giris");
+    if (!username) redirect("/erisim-yok");
     const perms = getPerms(username);
     if (!perms.canSeeYonetimSure) redirect("/erisim-yok");
-  } catch { redirect("/giris"); }
+  } catch { redirect("/erisim-yok"); }
 }
 
 export async function requireKonseySure() {
   const cookieStore = await cookies();
   const val = cookieStore.get(SESSION_COOKIE)?.value;
-  if (!val) redirect("/giris");
+  if (!val) redirect("/erisim-yok");
   try {
     const { username } = JSON.parse(val) as { username?: string };
-    if (!username) redirect("/giris");
+    if (!username) redirect("/erisim-yok");
     const perms = getPerms(username);
     if (!perms.canSeeKonseySure) redirect("/erisim-yok");
-  } catch { redirect("/giris"); }
+  } catch { redirect("/erisim-yok"); }
 }
 
 export async function requireAdmin() {
