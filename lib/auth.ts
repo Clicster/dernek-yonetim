@@ -2,7 +2,6 @@ export type UserRole = "admin" | "viewer";
 
 export interface UserDef {
   role: UserRole;
-  canSeeDernek: boolean;
   canSeeYonetimSure: boolean;
   canSeeKonseySure: boolean;
   canSeeAdmin: boolean;
@@ -11,45 +10,39 @@ export interface UserDef {
 export const USERS: Record<string, UserDef> = {
   "BTNR7": {
     role: "viewer",
-    canSeeDernek: false,
     canSeeYonetimSure: true,
     canSeeKonseySure: true,
     canSeeAdmin: true,
   },
   "TRZiboWTR": {
     role: "viewer",
-    canSeeDernek: false,
     canSeeYonetimSure: true,
     canSeeKonseySure: true,
     canSeeAdmin: true,
   },
   "alparda33": {
     role: "admin",
-    canSeeDernek: true,
     canSeeYonetimSure: true,
     canSeeKonseySure: true,
     canSeeAdmin: true,
   },
   "TPDRoom": {
     role: "admin",
-    canSeeDernek: true,
     canSeeYonetimSure: true,
     canSeeKonseySure: true,
     canSeeAdmin: true,
   },
   "FunkyŞimal01": {
     role: "admin",
-    canSeeDernek: true,
     canSeeYonetimSure: true,
     canSeeKonseySure: true,
     canSeeAdmin: true,
   },
 };
 
-// Listede olmayan kullanıcılar için varsayılan yetki — sadece dernekler
+// Listede olmayan kullanıcılar için varsayılan yetki — yönetim/konsey/admin yok
 export const DEFAULT_PERMS: UserDef = {
   role: "viewer",
-  canSeeDernek: true,
   canSeeYonetimSure: false,
   canSeeKonseySure: false,
   canSeeAdmin: false,

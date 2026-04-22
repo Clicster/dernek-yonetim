@@ -20,7 +20,6 @@ function NavItem({
   activeClass: string;
   allowed: boolean;
 }) {
-  // Yönlendirme tamamen middleware'e bırakıldı (server-side, güvenli)
   return (
     <Link
       href={href}
@@ -57,8 +56,6 @@ export default function Navbar() {
   };
 
   const isLoggedIn = !!user.username;
-  // Giriş yapılmamışsa false → NavItem /giris'e yönlendirir
-  const canSeeDernek = isLoggedIn && (user as UserDef).canSeeDernek;
   const canSeeYonetim = isLoggedIn && (user as UserDef).canSeeYonetimSure;
   const canSeeKonsey = isLoggedIn && (user as UserDef).canSeeKonseySure;
   const canSeeAdmin = isLoggedIn && (user as UserDef).canSeeAdmin;
@@ -71,7 +68,7 @@ export default function Navbar() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 shrink-0">
             <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">D</span>
+              <span className="text-white font-bold text-sm">T</span>
             </div>
             <span className="text-white font-semibold text-lg tracking-tight hidden sm:block">
               TPD İstatistik
@@ -82,10 +79,6 @@ export default function Navbar() {
 
           {/* Linkler */}
           <div className="flex items-center gap-1 shrink-0">
-
-            {/* Dernekler */}
-            <NavItem label="CHD" href="/chd" active={pathname.startsWith("/chd")} activeClass="bg-blue-600 text-white" allowed={canSeeDernek} />
-            <NavItem label="Treachery" href="/treachery" active={pathname.startsWith("/treachery")} activeClass="bg-red-600 text-white" allowed={canSeeDernek} />
 
             {/* Yönetim Süre */}
             <NavItem label="Yönetim Süre" href="/yonetim-sure" active={pathname.startsWith("/yonetim-sure")} activeClass="bg-emerald-600 text-white" allowed={canSeeYonetim} />

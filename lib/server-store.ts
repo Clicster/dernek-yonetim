@@ -1,4 +1,4 @@
-import { AppData, DEFAULT_KUR, AYLAR, PERIODLAR } from "./types";
+import { AppData, AYLAR, PERIODLAR } from "./types";
 
 const USE_SUPABASE = !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY);
 
@@ -21,18 +21,7 @@ if (!USE_SUPABASE) {
   DATA_FILE = path.join(DATA_DIR, "app-data.json");
 }
 
-const defaultDernekData = () => ({
-  uyelikler: [],
-  ikramiyeler: [],
-  coinHarcamalar: [],
-  ekstralar: [],
-  yoneticiler: [],
-  kurFiyatlari: { ...DEFAULT_KUR },
-});
-
 const defaultData: AppData = {
-  chd: defaultDernekData(),
-  treachery: defaultDernekData(),
   yonetimSure: [],
   konseySure: [],
   verifiedKullanicilar: [],
@@ -40,38 +29,16 @@ const defaultData: AppData = {
 };
 
 function migrateData(raw: unknown): AppData {
-  const data = raw as Record<string, Record<string, unknown>>;
+  const data = raw as Record<string, unknown>;
 
-  for (const key of ["chd", "treachery"] as const) {
-    const dernek = data[key];
-    if (!dernek) { data[key] = defaultDernekData(); continue; }
+  // Eski dernek alanlarını kaldır
+  delete data.chd;
+  delete data.treachery;
 
-    // Eski cekilisler alanını kaldır (artık kullanılmıyor)
-    delete dernek.cekilisler;
-
-    // Eksik alanları ekle
-    if (!dernek.uyelikler) dernek.uyelikler = [];
-    if (!dernek.ikramiyeler) dernek.ikramiyeler = [];
-    if (!dernek.coinHarcamalar) dernek.coinHarcamalar = [];
-    if (!dernek.ekstralar) dernek.ekstralar = [];
-    if (!dernek.yoneticiler) dernek.yoneticiler = [];
-    if (!dernek.kurFiyatlari) dernek.kurFiyatlari = { ...DEFAULT_KUR };
-
-    // Eski üyelik formatını temizle (kisiAdi, notlar vs artık yok)
-    dernek.uyelikler = (dernek.uyelikler as Record<string, unknown>[]).map((u) => {
-      if (u.uyelikTuru && typeof u.adet === "number") return u; // zaten yeni format
-      // Eski format: dönüştür
-      return {
-        id: u.id ?? Date.now().toString(),
-        tarih: u.tarih ?? "",
-        uyelikTuru: "HC",
-        adet: 1,
-        coinMiktar: 0,
-      };
-    });
-
-    // Yönetici migrasyonu (eski oda/calisma flat → aylar)
-    dernek.yoneticiler = (dernek.yoneticiler as Record<string, unknown>[]).map((y) => {
+  // Sure kişi migrasyon (eski oda/calisma flat → aylar)
+  for (const key of ["yonetimSure", "konseySure"] as const) {
+    if (!data[key]) { data[key] = []; continue; }
+    data[key] = ((data[key] as Record<string, unknown>[]) ?? []).map((y) => {
       if (y.aylar) return y;
       const aylar = Object.fromEntries(
         AYLAR.map((ay) => [
@@ -82,14 +49,12 @@ function migrateData(raw: unknown): AppData {
           },
         ])
       );
-      return { id: y.id, ad: y.ad, rol: y.rol, aylar };
+      return { id: y.id, ad: y.ad, rol: y.rol, habboismi: y.habboismi ?? "", aylar };
     });
   }
 
-  // Yeni alanları ekle (yoksa)
-  if (!data.yonetimSure) (data as Record<string, unknown>).yonetimSure = [];
-  if (!data.konseySure) (data as Record<string, unknown>).konseySure = [];
-  if (!data.verifiedKullanicilar) (data as Record<string, unknown>).verifiedKullanicilar = [];
+  if (!data.verifiedKullanicilar) data.verifiedKullanicilar = [];
+  if (!data.kullaniciSifreleri) data.kullaniciSifreleri = {};
 
   return data as unknown as AppData;
 }
