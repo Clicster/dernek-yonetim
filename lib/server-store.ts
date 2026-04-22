@@ -36,8 +36,8 @@ function migrateData(raw: unknown): AppData {
   delete data.chd;
   delete data.treachery;
 
-  // Periyotlar yoksa varsayılanları ekle
-  if (!data.periyotlar) data.periyotlar = DEFAULT_PERIYOTLAR;
+  // Periyotlar yoksa veya geçersizse varsayılanları ekle
+  if (!Array.isArray(data.periyotlar)) data.periyotlar = DEFAULT_PERIYOTLAR;
 
   // Sure kişi migrasyon (eski oda/calisma flat → aylar)
   for (const key of ["yonetimSure", "konseySure"] as const) {

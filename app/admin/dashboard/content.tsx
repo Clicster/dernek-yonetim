@@ -230,15 +230,15 @@ export default function AdminDashboard() {
 }
 
 // ─── Periyot Ayarları ─────────────────────────────────────────────────────────
+// Yerel buffer yok — her ekleme/silme anında kaydedilir
 
 function PeriyotAyarlari({ periyotlar, onSave }: { periyotlar: Periyot[]; onSave: (p: Periyot[]) => Promise<void> }) {
-  const [liste, setListe] = useState<Periyot[]>(periyotlar);
   const [baslangic, setBaslangic] = useState<number | "">("");
   const [bitis, setBitis] = useState<number | "">("");
   const [hata, setHata] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const ekle = () => {
+  const ekle = async () => {
     setHata("");
     const b = Number(baslangic);
     const e = Number(bitis);
@@ -246,43 +246,47 @@ function PeriyotAyarlari({ periyotlar, onSave }: { periyotlar: Periyot[]; onSave
     if (b < 1 || b > 31 || e < 1 || e > 31) { setHata("Günler 1–31 arasında olmalı."); return; }
     if (b > e) { setHata("Başlangıç, bitişten büyük olamaz."); return; }
     const key = `${b}-${e}`;
-    if (liste.some((p) => periyotKey(p) === key)) { setHata("Bu periyot zaten var."); return; }
-    setListe((prev) => [...prev, { baslangic: b, bitis: e }].sort((a, c) => a.baslangic - c.baslangic));
+    if (periyotlar.some((p) => periyotKey(p) === key)) { setHata("Bu periyot zaten var."); return; }
+    const yeni = [...periyotlar, { baslangic: b, bitis: e }].sort((a, c) => a.baslangic - c.baslangic);
+    setSaving(true);
+    await onSave(yeni);
+    setSaving(false);
     setBaslangic("");
     setBitis("");
   };
 
-  const sil = (idx: number) => {
-    setListe((prev) => prev.filter((_, i) => i !== idx));
-  };
-
-  const kaydet = async () => {
+  const sil = async (idx: number) => {
+    const yeni = periyotlar.filter((_, i) => i !== idx);
     setSaving(true);
-    await onSave(liste);
+    await onSave(yeni);
     setSaving(false);
   };
 
   return (
     <div className="space-y-6">
       <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-800">
-          <h2 className="text-white font-semibold">Periyot Ayarları</h2>
-          <p className="text-gray-500 text-xs mt-0.5">Süre tablosunda görünecek tarih aralıklarını belirle</p>
+        <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
+          <div>
+            <h2 className="text-white font-semibold">Periyot Ayarları</h2>
+            <p className="text-gray-500 text-xs mt-0.5">Süre tablosunda görünecek tarih aralıklarını belirle</p>
+          </div>
+          {saving && <span className="text-indigo-400 text-xs animate-pulse">Kaydediliyor...</span>}
         </div>
 
-        {/* Mevcut periyotlar */}
+        {/* Mevcut periyotlar — doğrudan prop'tan gelir, anında kaydedilir */}
         <div className="p-4 space-y-2">
-          {liste.length === 0 && (
+          {periyotlar.length === 0 && (
             <p className="text-gray-600 text-sm text-center py-4">Henüz periyot tanımlanmamış</p>
           )}
-          {liste.map((p, i) => (
-            <div key={i} className="flex items-center justify-between bg-gray-800 rounded-lg px-4 py-2.5">
+          {periyotlar.map((p, i) => (
+            <div key={periyotKey(p)} className="flex items-center justify-between bg-gray-800 rounded-lg px-4 py-2.5">
               <div className="flex items-center gap-3">
                 <span className="text-gray-500 text-xs w-4 text-right">{i + 1}.</span>
                 <span className="text-white font-mono font-semibold">{periyotKey(p)}</span>
                 <span className="text-gray-500 text-xs">({p.baslangic}. gün – {p.bitis}. gün)</span>
               </div>
-              <button onClick={() => sil(i)} className="text-red-500 hover:text-red-400 text-xs px-2 py-1 rounded hover:bg-red-500/10 transition-colors">
+              <button onClick={() => sil(i)} disabled={saving}
+                className="text-red-500 hover:text-red-400 disabled:opacity-40 text-xs px-2 py-1 rounded hover:bg-red-500/10 transition-colors">
                 Sil
               </button>
             </div>
@@ -312,21 +316,12 @@ function PeriyotAyarlari({ periyotlar, onSave }: { periyotlar: Periyot[]; onSave
                 className="w-24 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 text-center"
               />
             </div>
-            <button onClick={ekle}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors">
+            <button onClick={ekle} disabled={saving}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors">
               + Ekle
             </button>
           </div>
           {hata && <p className="text-red-400 text-xs mt-2">{hata}</p>}
-        </div>
-
-        {/* Kaydet */}
-        <div className="px-4 pb-4">
-          <button onClick={kaydet} disabled={saving}
-            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-semibold rounded-lg text-sm transition-colors">
-            {saving ? "Kaydediliyor..." : "Değişiklikleri Kaydet"}
-          </button>
-          <p className="text-gray-600 text-xs mt-2 text-center">Kaydetmeden çıkarsanız değişiklikler uygulanmaz</p>
         </div>
       </div>
     </div>
