@@ -21,6 +21,12 @@ if (!USE_SUPABASE) {
   DATA_FILE = path.join(DATA_DIR, "app-data.json");
 }
 
+export const supabaseStatus = {
+  enabled: USE_SUPABASE,
+  url: process.env.SUPABASE_URL ? "SET" : "MISSING",
+  key: process.env.SUPABASE_SERVICE_KEY ? "SET" : "MISSING",
+};
+
 const defaultData: AppData = {
   periyotlar: DEFAULT_PERIYOTLAR,
   yonetimSure: [],
@@ -44,12 +50,8 @@ function migrateData(raw: unknown): AppData {
     if (!data[key]) { data[key] = []; continue; }
     data[key] = ((data[key] as Record<string, unknown>[]) ?? []).map((y) => {
       if (y.aylar) return y;
-      // Eski düz format → aylı formata çevir
       const aylar = Object.fromEntries(
-        AYLAR.map((ay) => [
-          ay,
-          { oda: {}, calisma: {} },
-        ])
+        AYLAR.map((ay) => [ay, { oda: {}, calisma: {} }])
       );
       return { id: y.id, ad: y.ad, rol: y.rol, habboismi: y.habboismi ?? "", aylar };
     });
@@ -66,9 +68,14 @@ export async function readData(): Promise<AppData> {
     try {
       const { createClient } = await import("@supabase/supabase-js");
       const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
-      const { data } = await supabase.from("app_data").select("data").eq("id", "main").single();
+      const { data, error } = await supabase.from("app_data").select("data").eq("id", "main").single();
+      if (error) {
+        console.error("[readData] Supabase okuma hatası:", error);
+        return defaultData;
+      }
       return data ? migrateData(data.data) : defaultData;
-    } catch {
+    } catch (err) {
+      console.error("[readData] Beklenmeyen hata:", err);
       return defaultData;
     }
   }
@@ -85,7 +92,13 @@ export async function writeData(data: AppData): Promise<void> {
   if (USE_SUPABASE) {
     const { createClient } = await import("@supabase/supabase-js");
     const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
-    await supabase.from("app_data").upsert({ id: "main", data });
+    const { error } = await supabase
+      .from("app_data")
+      .upsert({ id: "main", data }, { onConflict: "id" });
+    if (error) {
+      console.error("[writeData] Supabase yazma hatası:", error);
+      throw new Error(`Supabase yazma hatası: ${error.message}`);
+    }
     return;
   }
   if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });

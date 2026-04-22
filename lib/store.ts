@@ -14,9 +14,13 @@ export async function getData(): Promise<AppData> {
 }
 
 export async function saveData(data: AppData): Promise<void> {
-  await fetch("/api/data", {
+  const res = await fetch("/api/data", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `HTTP ${res.status}`);
+  }
 }

@@ -44,6 +44,7 @@ export default function AdminDashboard() {
   const [editKisi, setEditKisi] = useState<SureKisi | null>(null);
 
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const { ay: secilenAy, setAy } = useAy();
 
   useEffect(() => {
@@ -62,9 +63,14 @@ export default function AdminDashboard() {
 
   const save = async (updated: AppData) => {
     setData(updated);
-    await saveData(updated);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setSaveError("");
+    try {
+      await saveData(updated);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      setSaveError(String(err));
+    }
   };
 
   const removeKisi = async (id: string, tip: "yonetim" | "konsey") => {
@@ -84,7 +90,12 @@ export default function AdminDashboard() {
           <p className="text-gray-400 text-sm">Süre verilerini yönet</p>
         </div>
         {saved && (
-          <span className="text-green-400 text-sm bg-green-500/10 border border-green-500/20 px-3 py-1.5 rounded-lg">Kaydedildi</span>
+          <span className="text-green-400 text-sm bg-green-500/10 border border-green-500/20 px-3 py-1.5 rounded-lg">✓ Kaydedildi</span>
+        )}
+        {saveError && (
+          <span className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded-lg max-w-sm truncate" title={saveError}>
+            ✗ Kayıt hatası: {saveError}
+          </span>
         )}
       </div>
 
