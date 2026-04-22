@@ -58,6 +58,7 @@ export default function AdminDashboard() {
   const [editKisi, setEditKisi] = useState<SureKisi | null>(null);
 
   const [saved, setSaved] = useState(false);
+  const [canSeeDernek, setCanSeeDernek] = useState(true);
   const { ay: secilenAy, setAy, ayIndex, yil } = useAy();
 
   const ayFiltre = (tarih: string) => {
@@ -68,8 +69,11 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => r.json())
-      .then((u: { username: null | string; canSeeAdmin?: boolean }) => {
+      .then((u: { username: null | string; canSeeAdmin?: boolean; canSeeDernek?: boolean }) => {
         if (!u.username || !u.canSeeAdmin) router.replace("/giris");
+        const hasDernek = u.canSeeDernek ?? true;
+        setCanSeeDernek(hasDernek);
+        if (!hasDernek) setMainTab("yonetim");
       });
     getData().then(setData);
   }, [router]);
@@ -145,7 +149,9 @@ export default function AdminDashboard() {
 
       {/* Ana Sekme */}
       <div className="flex gap-2">
-        {(["dernek", "yonetim", "konsey"] as MainTab[]).map((t) => (
+        {(["dernek", "yonetim", "konsey"] as MainTab[])
+          .filter((t) => t !== "dernek" || canSeeDernek)
+          .map((t) => (
           <button key={t} onClick={() => setMainTab(t)}
             className={`px-5 py-2 rounded-lg font-semibold text-sm transition-colors ${
               mainTab === t

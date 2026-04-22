@@ -14,14 +14,14 @@ export const USERS: Record<string, UserDef> = {
     canSeeDernek: false,
     canSeeYonetimSure: true,
     canSeeKonseySure: true,
-    canSeeAdmin: false,
+    canSeeAdmin: true,
   },
   "TRZiboWTR": {
     role: "viewer",
     canSeeDernek: false,
     canSeeYonetimSure: true,
     canSeeKonseySure: true,
-    canSeeAdmin: false,
+    canSeeAdmin: true,
   },
   "alparda33": {
     role: "admin",
