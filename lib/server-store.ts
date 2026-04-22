@@ -92,12 +92,38 @@ export async function writeData(data: AppData): Promise<void> {
   if (USE_SUPABASE) {
     const { createClient } = await import("@supabase/supabase-js");
     const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
-    const { error } = await supabase
+
+    // Önce satır var mı kontrol et
+    const { data: existing, error: selectError } = await supabase
       .from("app_data")
-      .upsert({ id: "main", data }, { onConflict: "id" });
-    if (error) {
-      console.error("[writeData] Supabase yazma hatası:", error);
-      throw new Error(`Supabase yazma hatası: ${error.message}`);
+      .select("id")
+      .eq("id", "main")
+      .maybeSingle();
+
+    if (selectError) {
+      console.error("[writeData] SELECT hatası:", JSON.stringify(selectError));
+      throw new Error(`SELECT hatası: ${selectError.message} (code: ${selectError.code})`);
+    }
+
+    if (existing) {
+      // Satır var → UPDATE
+      const { error: updateError } = await supabase
+        .from("app_data")
+        .update({ data })
+        .eq("id", "main");
+      if (updateError) {
+        console.error("[writeData] UPDATE hatası:", JSON.stringify(updateError));
+        throw new Error(`UPDATE hatası: ${updateError.message} (code: ${updateError.code})`);
+      }
+    } else {
+      // Satır yok → INSERT
+      const { error: insertError } = await supabase
+        .from("app_data")
+        .insert({ id: "main", data });
+      if (insertError) {
+        console.error("[writeData] INSERT hatası:", JSON.stringify(insertError));
+        throw new Error(`INSERT hatası: ${insertError.message} (code: ${insertError.code})`);
+      }
     }
     return;
   }

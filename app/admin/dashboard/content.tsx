@@ -93,9 +93,9 @@ export default function AdminDashboard() {
           <span className="text-green-400 text-sm bg-green-500/10 border border-green-500/20 px-3 py-1.5 rounded-lg">✓ Kaydedildi</span>
         )}
         {saveError && (
-          <span className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded-lg max-w-sm truncate" title={saveError}>
+          <div className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-lg max-w-lg break-all">
             ✗ Kayıt hatası: {saveError}
-          </span>
+          </div>
         )}
       </div>
 
