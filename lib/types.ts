@@ -1,15 +1,29 @@
-export const PERIODLAR = ["1-7", "8-14", "15-21", "22-28", "28-31"] as const;
-export type Period = (typeof PERIODLAR)[number];
-
 export const AYLAR = [
   "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
   "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık",
 ] as const;
 export type Ay = (typeof AYLAR)[number];
 
+// Periyot artık dinamik: admin panelden tanımlanır
+export interface Periyot {
+  baslangic: number; // 1–31
+  bitis: number;     // 1–31
+}
+
+// Periyot anahtarı: "baslangic-bitis" (örn. "1-7")
+export function periyotKey(p: Periyot): string {
+  return `${p.baslangic}-${p.bitis}`;
+}
+
+// Bir gün numarasının hangi periyoda düştüğünü döndür
+export function gundenPeriyotKey(gun: number, periyotlar: Periyot[]): string | null {
+  const p = periyotlar.find((x) => gun >= x.baslangic && gun <= x.bitis);
+  return p ? periyotKey(p) : null;
+}
+
 export interface AylikVeri {
-  oda: Record<Period, number>;
-  calisma: Record<Period, number>;
+  oda: Record<string, number>;
+  calisma: Record<string, number>;
 }
 
 export interface SureKisi {
@@ -21,16 +35,18 @@ export interface SureKisi {
 }
 
 export interface AppData {
+  periyotlar: Periyot[];
   yonetimSure: SureKisi[];
   konseySure: SureKisi[];
   verifiedKullanicilar: string[];
   kullaniciSifreleri: Record<string, string>;
 }
 
-export function gundenPeriod(gun: number): Period {
-  if (gun <= 7) return "1-7";
-  if (gun <= 14) return "8-14";
-  if (gun <= 21) return "15-21";
-  if (gun <= 28) return "22-28";
-  return "28-31";
-}
+// Varsayılan periyotlar (eski sabit yapıdan geçiş için)
+export const DEFAULT_PERIYOTLAR: Periyot[] = [
+  { baslangic: 1, bitis: 7 },
+  { baslangic: 8, bitis: 14 },
+  { baslangic: 15, bitis: 21 },
+  { baslangic: 22, bitis: 28 },
+  { baslangic: 29, bitis: 31 },
+];

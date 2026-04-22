@@ -1,4 +1,4 @@
-import { AppData, AYLAR, PERIODLAR } from "./types";
+import { AppData, AYLAR, DEFAULT_PERIYOTLAR } from "./types";
 
 const USE_SUPABASE = !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY);
 
@@ -22,6 +22,7 @@ if (!USE_SUPABASE) {
 }
 
 const defaultData: AppData = {
+  periyotlar: DEFAULT_PERIYOTLAR,
   yonetimSure: [],
   konseySure: [],
   verifiedKullanicilar: [],
@@ -35,18 +36,19 @@ function migrateData(raw: unknown): AppData {
   delete data.chd;
   delete data.treachery;
 
+  // Periyotlar yoksa varsayılanları ekle
+  if (!data.periyotlar) data.periyotlar = DEFAULT_PERIYOTLAR;
+
   // Sure kişi migrasyon (eski oda/calisma flat → aylar)
   for (const key of ["yonetimSure", "konseySure"] as const) {
     if (!data[key]) { data[key] = []; continue; }
     data[key] = ((data[key] as Record<string, unknown>[]) ?? []).map((y) => {
       if (y.aylar) return y;
+      // Eski düz format → aylı formata çevir
       const aylar = Object.fromEntries(
         AYLAR.map((ay) => [
           ay,
-          {
-            oda: Object.fromEntries(PERIODLAR.map((p) => [p, (y as Record<string, Record<string, number>>).oda?.[p] ?? 0])),
-            calisma: Object.fromEntries(PERIODLAR.map((p) => [p, (y as Record<string, Record<string, number>>).calisma?.[p] ?? 0])),
-          },
+          { oda: {}, calisma: {} },
         ])
       );
       return { id: y.id, ad: y.ad, rol: y.rol, habboismi: y.habboismi ?? "", aylar };

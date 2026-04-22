@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getData } from "@/lib/store";
-import { AppData, PERIODLAR, Period, SureKisi } from "@/lib/types";
+import { AppData, SureKisi, periyotKey } from "@/lib/types";
 import { useAy } from "@/lib/ay-context";
 
 function fmtSure(saniye: number): string {
@@ -24,6 +24,7 @@ export default function KonseySurePage() {
   if (!data) return null;
 
   const kisiler: SureKisi[] = data.konseySure ?? [];
+  const periyotlar = [...(data.periyotlar ?? [])].sort((a, b) => a.baslangic - b.baslangic);
 
   return (
     <div className="space-y-6">
@@ -44,14 +45,14 @@ export default function KonseySurePage() {
               <tr className="text-gray-500 text-left border-b border-gray-800">
                 <th className="px-4 py-2">Ad</th>
                 <th className="px-4 py-2">Rol</th>
-                {PERIODLAR.map((p) => (
-                  <th key={`o-${p}`} className="px-3 py-2 text-center whitespace-nowrap text-xs">
-                    {p}<br /><span className="text-blue-500">Oda</span>
+                {periyotlar.map((p) => (
+                  <th key={`o-${periyotKey(p)}`} className="px-3 py-2 text-center whitespace-nowrap text-xs">
+                    {periyotKey(p)}<br /><span className="text-blue-500">Oda</span>
                   </th>
                 ))}
-                {PERIODLAR.map((p) => (
-                  <th key={`c-${p}`} className="px-3 py-2 text-center whitespace-nowrap text-xs">
-                    {p}<br /><span className="text-purple-500">Çalışma</span>
+                {periyotlar.map((p) => (
+                  <th key={`c-${periyotKey(p)}`} className="px-3 py-2 text-center whitespace-nowrap text-xs">
+                    {periyotKey(p)}<br /><span className="text-purple-500">Çalışma</span>
                   </th>
                 ))}
               </tr>
@@ -63,14 +64,14 @@ export default function KonseySurePage() {
                   <tr key={k.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
                     <td className="px-4 py-2 text-gray-200 font-medium whitespace-nowrap">{k.ad}</td>
                     <td className="px-4 py-2 text-gray-400 whitespace-nowrap">{k.rol}</td>
-                    {PERIODLAR.map((p) => (
-                      <td key={`o-${p}`} className="px-3 py-2 text-center text-blue-400 font-mono text-xs tabular-nums whitespace-nowrap">
-                        {fmtSure((ay.oda as Record<Period, number>)[p] ?? 0)}
+                    {periyotlar.map((p) => (
+                      <td key={`o-${periyotKey(p)}`} className="px-3 py-2 text-center text-blue-400 font-mono text-xs tabular-nums whitespace-nowrap">
+                        {fmtSure((ay.oda as Record<string, number>)[periyotKey(p)] ?? 0)}
                       </td>
                     ))}
-                    {PERIODLAR.map((p) => (
-                      <td key={`c-${p}`} className="px-3 py-2 text-center text-purple-400 font-mono text-xs tabular-nums whitespace-nowrap">
-                        {fmtSure((ay.calisma as Record<Period, number>)[p] ?? 0)}
+                    {periyotlar.map((p) => (
+                      <td key={`c-${periyotKey(p)}`} className="px-3 py-2 text-center text-purple-400 font-mono text-xs tabular-nums whitespace-nowrap">
+                        {fmtSure((ay.calisma as Record<string, number>)[periyotKey(p)] ?? 0)}
                       </td>
                     ))}
                   </tr>
@@ -78,7 +79,7 @@ export default function KonseySurePage() {
               })}
               {kisiler.length === 0 && (
                 <tr>
-                  <td colSpan={2 + PERIODLAR.length * 2} className="px-4 py-8 text-center text-gray-600">
+                  <td colSpan={2 + periyotlar.length * 2} className="px-4 py-8 text-center text-gray-600">
                     Henüz kayıt yok
                   </td>
                 </tr>

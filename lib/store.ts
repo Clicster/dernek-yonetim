@@ -1,14 +1,7 @@
-import { AppData, Ay, AYLAR, AylikVeri, Period, PERIODLAR } from "./types";
-
-export function emptyPeriods(): Record<Period, number> {
-  return Object.fromEntries(PERIODLAR.map((p) => [p, 0])) as Record<Period, number>;
-}
+import { AppData, Ay, AYLAR, AylikVeri } from "./types";
 
 export function emptyAylikVeri(): AylikVeri {
-  return {
-    oda: emptyPeriods(),
-    calisma: emptyPeriods(),
-  };
+  return { oda: {}, calisma: {} };
 }
 
 export function emptyAylar(): Record<Ay, AylikVeri> {
@@ -27,4 +20,3 @@ export async function saveData(data: AppData): Promise<void> {
     body: JSON.stringify(data),
   });
 }
-

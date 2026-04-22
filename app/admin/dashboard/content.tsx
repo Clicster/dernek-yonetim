@@ -4,14 +4,14 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getData, saveData, emptyAylar } from "@/lib/store";
 import {
-  AppData, Ay, AYLAR, Period, PERIODLAR, SureKisi, gundenPeriod,
+  AppData, Ay, AYLAR, Periyot, SureKisi,
+  periyotKey, gundenPeriyotKey,
 } from "@/lib/types";
 import { useAy } from "@/lib/ay-context";
 
-// AylikVeri tipi import için
 import type { AylikVeri } from "@/lib/types";
 
-type MainTab = "yonetim" | "konsey";
+type MainTab = "yonetim" | "konsey" | "ayarlar";
 type SureModal = "sure-ekle" | "sure-kisi-ekle" | "sure-kisi-duzenle" | null;
 
 function fmtSure(saniye: number): string {
@@ -26,7 +26,6 @@ function hmsToSaniye(saat: number, dk: number, sn: number): number {
   return saat * 3600 + dk * 60 + sn;
 }
 
-// Tüm eşleşen kişilerde süreyi senkronize et (yonetim + konsey)
 function syncHabboismi(data: AppData, habboismi: string, aylar: Record<Ay, AylikVeri>): AppData {
   if (!habboismi) return data;
   const updated = { ...data };
@@ -40,7 +39,6 @@ export default function AdminDashboard() {
   const [data, setData] = useState<AppData | null>(null);
   const [mainTab, setMainTab] = useState<MainTab>("yonetim");
 
-  // Süre (Yönetim/Konsey) modalleri
   const [sureModal, setSureModal] = useState<SureModal>(null);
   const [sureHedefKisi, setSureHedefKisi] = useState<SureKisi | null>(null);
   const [editKisi, setEditKisi] = useState<SureKisi | null>(null);
@@ -58,6 +56,9 @@ export default function AdminDashboard() {
   }, [router]);
 
   if (!data) return null;
+
+  const periyotlar: Periyot[] = data.periyotlar ?? [];
+  const sortedPeriyotlar = [...periyotlar].sort((a, b) => a.baslangic - b.baslangic);
 
   const save = async (updated: AppData) => {
     setData(updated);
@@ -89,137 +90,250 @@ export default function AdminDashboard() {
 
       {/* Ana Sekme */}
       <div className="flex gap-2">
-        {(["yonetim", "konsey"] as MainTab[]).map((t) => (
+        {(["yonetim", "konsey", "ayarlar"] as MainTab[]).map((t) => (
           <button key={t} onClick={() => setMainTab(t)}
             className={`px-5 py-2 rounded-lg font-semibold text-sm transition-colors ${
               mainTab === t
-                ? t === "yonetim" ? "bg-emerald-600 text-white" : "bg-purple-600 text-white"
+                ? t === "yonetim" ? "bg-emerald-600 text-white"
+                  : t === "konsey" ? "bg-purple-600 text-white"
+                  : "bg-gray-600 text-white"
                 : "bg-gray-800 text-gray-400 hover:text-white"
             }`}>
-            {t === "yonetim" ? "Yönetim Süre" : "Konsey Süre"}
+            {t === "yonetim" ? "Yönetim Süre" : t === "konsey" ? "Konsey Süre" : "⚙ Ayarlar"}
           </button>
         ))}
       </div>
 
-      {/* ─── YÖNETİM SÜRE / KONSEY SÜRE BÖLÜMÜ ─── */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800 flex-wrap gap-2">
-          <h2 className="text-white font-semibold flex items-center gap-2">
-            {mainTab === "yonetim" ? "Yönetim Süre" : "Konsey Süre"}
-            <span className="text-gray-500 text-sm font-normal">— {secilenAy}</span>
-          </h2>
-          <div className="flex items-center gap-2">
-            <select value={secilenAy} onChange={(e) => setAy(e.target.value as Ay)}
-              className="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-white text-xs focus:outline-none">
-              {AYLAR.map((ay) => <option key={ay} value={ay}>{ay}</option>)}
-            </select>
-          </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-gray-500 text-left border-b border-gray-800">
-                <th className="px-4 py-2">Ad</th><th className="px-4 py-2">Rol</th>
-                <th className="px-4 py-2">Habbo</th>
-                {PERIODLAR.map((p) => (
-                  <th key={`o-${p}`} className="px-3 py-2 text-center whitespace-nowrap text-xs">
-                    {p}<br /><span className="text-blue-500">Oda</span>
-                  </th>
-                ))}
-                {PERIODLAR.map((p) => (
-                  <th key={`c-${p}`} className="px-3 py-2 text-center whitespace-nowrap text-xs">
-                    {p}<br /><span className={mainTab === "yonetim" ? "text-green-500" : "text-purple-500"}>Çalışma</span>
-                  </th>
-                ))}
-                <th className="px-4 py-2 text-center">İşlem</th>
-              </tr>
-            </thead>
-            <tbody>
-              {aktifKisiler.map((k) => {
-                const ay = k.aylar?.[secilenAy] ?? { oda: {}, calisma: {} };
-                return (
-                  <tr key={k.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
-                    <td className="px-4 py-2 text-gray-200 font-medium whitespace-nowrap">{k.ad}</td>
-                    <td className="px-4 py-2 text-gray-400 whitespace-nowrap">{k.rol}</td>
-                    <td className="px-4 py-2 text-gray-500 text-xs">{k.habboismi}</td>
-                    {PERIODLAR.map((p) => (
-                      <td key={`o-${p}`} className="px-3 py-2 text-center text-blue-400 font-mono text-xs tabular-nums whitespace-nowrap">
-                        {fmtSure((ay.oda as Record<Period, number>)[p] ?? 0)}
-                      </td>
+      {/* ─── YÖNETİM / KONSEY SÜRE ─── */}
+      {(mainTab === "yonetim" || mainTab === "konsey") && (
+        <>
+          <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800 flex-wrap gap-2">
+              <h2 className="text-white font-semibold flex items-center gap-2">
+                {mainTab === "yonetim" ? "Yönetim Süre" : "Konsey Süre"}
+                <span className="text-gray-500 text-sm font-normal">— {secilenAy}</span>
+              </h2>
+              <select value={secilenAy} onChange={(e) => setAy(e.target.value as Ay)}
+                className="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-white text-xs focus:outline-none">
+                {AYLAR.map((ay) => <option key={ay} value={ay}>{ay}</option>)}
+              </select>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-gray-500 text-left border-b border-gray-800">
+                    <th className="px-4 py-2">Ad</th>
+                    <th className="px-4 py-2">Rol</th>
+                    <th className="px-4 py-2">Habbo</th>
+                    {sortedPeriyotlar.map((p) => (
+                      <th key={`o-${periyotKey(p)}`} className="px-3 py-2 text-center whitespace-nowrap text-xs">
+                        {periyotKey(p)}<br /><span className="text-blue-500">Oda</span>
+                      </th>
                     ))}
-                    {PERIODLAR.map((p) => (
-                      <td key={`c-${p}`} className={`px-3 py-2 text-center font-mono text-xs tabular-nums whitespace-nowrap ${mainTab === "yonetim" ? "text-green-400" : "text-purple-400"}`}>
-                        {fmtSure((ay.calisma as Record<Period, number>)[p] ?? 0)}
-                      </td>
+                    {sortedPeriyotlar.map((p) => (
+                      <th key={`c-${periyotKey(p)}`} className="px-3 py-2 text-center whitespace-nowrap text-xs">
+                        {periyotKey(p)}<br /><span className={mainTab === "yonetim" ? "text-green-500" : "text-purple-500"}>Çalışma</span>
+                      </th>
                     ))}
-                    <td className="px-4 py-2 text-center">
-                      <div className="flex gap-2 justify-center">
-                        <button onClick={() => { setSureHedefKisi(k); setSureModal("sure-ekle"); }}
-                          className="text-emerald-500 hover:text-emerald-400 text-xs whitespace-nowrap">Süre Ekle</button>
-                        <button onClick={() => { setEditKisi(k); setSureModal("sure-kisi-duzenle"); }}
-                          className="text-blue-500 hover:text-blue-400 text-xs">Düzenle</button>
-                        <button onClick={() => removeKisi(k.id, mainTab === "yonetim" ? "yonetim" : "konsey")}
-                          className="text-red-500 hover:text-red-400 text-xs">Sil</button>
-                      </div>
-                    </td>
+                    <th className="px-4 py-2 text-center">İşlem</th>
                   </tr>
-                );
-              })}
-              {aktifKisiler.length === 0 && <EmptyRow cols={3 + PERIODLAR.length * 2 + 1} />}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                </thead>
+                <tbody>
+                  {aktifKisiler.map((k) => {
+                    const ay = k.aylar?.[secilenAy] ?? { oda: {}, calisma: {} };
+                    return (
+                      <tr key={k.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                        <td className="px-4 py-2 text-gray-200 font-medium whitespace-nowrap">{k.ad}</td>
+                        <td className="px-4 py-2 text-gray-400 whitespace-nowrap">{k.rol}</td>
+                        <td className="px-4 py-2 text-gray-500 text-xs">{k.habboismi}</td>
+                        {sortedPeriyotlar.map((p) => (
+                          <td key={`o-${periyotKey(p)}`} className="px-3 py-2 text-center text-blue-400 font-mono text-xs tabular-nums whitespace-nowrap">
+                            {fmtSure((ay.oda as Record<string, number>)[periyotKey(p)] ?? 0)}
+                          </td>
+                        ))}
+                        {sortedPeriyotlar.map((p) => (
+                          <td key={`c-${periyotKey(p)}`} className={`px-3 py-2 text-center font-mono text-xs tabular-nums whitespace-nowrap ${mainTab === "yonetim" ? "text-green-400" : "text-purple-400"}`}>
+                            {fmtSure((ay.calisma as Record<string, number>)[periyotKey(p)] ?? 0)}
+                          </td>
+                        ))}
+                        <td className="px-4 py-2 text-center">
+                          <div className="flex gap-2 justify-center">
+                            <button onClick={() => { setSureHedefKisi(k); setSureModal("sure-ekle"); }}
+                              className="text-emerald-500 hover:text-emerald-400 text-xs whitespace-nowrap">Süre Ekle</button>
+                            <button onClick={() => { setEditKisi(k); setSureModal("sure-kisi-duzenle"); }}
+                              className="text-blue-500 hover:text-blue-400 text-xs">Düzenle</button>
+                            <button onClick={() => removeKisi(k.id, mainTab as "yonetim" | "konsey")}
+                              className="text-red-500 hover:text-red-400 text-xs">Sil</button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {aktifKisiler.length === 0 && (
+                    <tr><td colSpan={3 + sortedPeriyotlar.length * 2 + 1} className="px-4 py-8 text-center text-gray-600">Kayıt bulunamadı</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
 
-      <div className="flex justify-end -mt-4">
-        <button onClick={() => { setEditKisi(null); setSureModal("sure-kisi-ekle"); }}
-          className={`px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors ${mainTab === "yonetim" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-purple-600 hover:bg-purple-700"}`}>
-          + Kişi Ekle
-        </button>
-      </div>
+          <div className="flex justify-end -mt-4">
+            <button onClick={() => { setEditKisi(null); setSureModal("sure-kisi-ekle"); }}
+              className={`px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors ${mainTab === "yonetim" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-purple-600 hover:bg-purple-700"}`}>
+              + Kişi Ekle
+            </button>
+          </div>
 
-      {/* Süre kişi ekle */}
-      {sureModal === "sure-kisi-ekle" && (
-        <SureKisiEkleModal onClose={() => setSureModal(null)}
-          onSave={async (kisi) => {
-            const u = { ...data };
-            if (mainTab === "yonetim") u.yonetimSure = [...u.yonetimSure, kisi];
-            else u.konseySure = [...u.konseySure, kisi];
-            await save(u); setSureModal(null);
-          }} />
+          {sureModal === "sure-kisi-ekle" && (
+            <SureKisiEkleModal onClose={() => setSureModal(null)}
+              onSave={async (kisi) => {
+                const u = { ...data };
+                if (mainTab === "yonetim") u.yonetimSure = [...u.yonetimSure, kisi];
+                else u.konseySure = [...u.konseySure, kisi];
+                await save(u); setSureModal(null);
+              }} />
+          )}
+          {sureModal === "sure-kisi-duzenle" && editKisi && (
+            <SureKisiDuzenleModal kisi={editKisi} onClose={() => { setSureModal(null); setEditKisi(null); }}
+              onSave={async (kisi) => {
+                const u = { ...data };
+                if (mainTab === "yonetim") u.yonetimSure = u.yonetimSure.map((k) => k.id === kisi.id ? kisi : k);
+                else u.konseySure = u.konseySure.map((k) => k.id === kisi.id ? kisi : k);
+                await save(u); setSureModal(null); setEditKisi(null);
+              }} />
+          )}
+          {sureModal === "sure-ekle" && sureHedefKisi && (
+            <SureKisiGirModal kisi={sureHedefKisi} varsayilanAy={secilenAy} periyotlar={sortedPeriyotlar}
+              onClose={() => { setSureModal(null); setSureHedefKisi(null); }}
+              onSave={async (guncelK) => {
+                let u = { ...data };
+                if (mainTab === "yonetim") u.yonetimSure = u.yonetimSure.map((k) => k.id === guncelK.id ? guncelK : k);
+                else u.konseySure = u.konseySure.map((k) => k.id === guncelK.id ? guncelK : k);
+                if (guncelK.habboismi) u = syncHabboismi(u, guncelK.habboismi, guncelK.aylar);
+                await save(u); setSureModal(null); setSureHedefKisi(null);
+              }} />
+          )}
+        </>
       )}
-      {/* Süre kişi düzenle */}
-      {sureModal === "sure-kisi-duzenle" && editKisi && (
-        <SureKisiDuzenleModal kisi={editKisi} onClose={() => { setSureModal(null); setEditKisi(null); }}
-          onSave={async (kisi) => {
-            const u = { ...data };
-            if (mainTab === "yonetim") u.yonetimSure = u.yonetimSure.map((k) => k.id === kisi.id ? kisi : k);
-            else u.konseySure = u.konseySure.map((k) => k.id === kisi.id ? kisi : k);
-            await save(u); setSureModal(null); setEditKisi(null);
-          }} />
-      )}
-      {/* Süre gir */}
-      {sureModal === "sure-ekle" && sureHedefKisi && (
-        <SureKisiGirModal kisi={sureHedefKisi} varsayilanAy={secilenAy}
-          onClose={() => { setSureModal(null); setSureHedefKisi(null); }}
-          onSave={async (guncelK) => {
-            let u = { ...data };
-            if (mainTab === "yonetim") u.yonetimSure = u.yonetimSure.map((k) => k.id === guncelK.id ? guncelK : k);
-            else u.konseySure = u.konseySure.map((k) => k.id === guncelK.id ? guncelK : k);
-            // Senkronizasyon
-            if (guncelK.habboismi) u = syncHabboismi(u, guncelK.habboismi, guncelK.aylar);
-            await save(u); setSureModal(null); setSureHedefKisi(null);
-          }} />
+
+      {/* ─── AYARLAR: Periyot Yönetimi ─── */}
+      {mainTab === "ayarlar" && (
+        <PeriyotAyarlari
+          periyotlar={sortedPeriyotlar}
+          onSave={async (yeni) => {
+            await save({ ...data, periyotlar: yeni });
+          }}
+        />
       )}
     </div>
   );
 }
 
-// ─── Yardımcı ─────────────────────────────────────────────────────────────────
+// ─── Periyot Ayarları ─────────────────────────────────────────────────────────
 
-function EmptyRow({ cols }: { cols: number }) {
-  return <tr><td colSpan={cols} className="px-4 py-8 text-center text-gray-600">Kayıt bulunamadı</td></tr>;
+function PeriyotAyarlari({ periyotlar, onSave }: { periyotlar: Periyot[]; onSave: (p: Periyot[]) => Promise<void> }) {
+  const [liste, setListe] = useState<Periyot[]>(periyotlar);
+  const [baslangic, setBaslangic] = useState<number | "">("");
+  const [bitis, setBitis] = useState<number | "">("");
+  const [hata, setHata] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const ekle = () => {
+    setHata("");
+    const b = Number(baslangic);
+    const e = Number(bitis);
+    if (!baslangic || !bitis) { setHata("Başlangıç ve bitiş gün girilmeli."); return; }
+    if (b < 1 || b > 31 || e < 1 || e > 31) { setHata("Günler 1–31 arasında olmalı."); return; }
+    if (b > e) { setHata("Başlangıç, bitişten büyük olamaz."); return; }
+    const key = `${b}-${e}`;
+    if (liste.some((p) => periyotKey(p) === key)) { setHata("Bu periyot zaten var."); return; }
+    setListe((prev) => [...prev, { baslangic: b, bitis: e }].sort((a, c) => a.baslangic - c.baslangic));
+    setBaslangic("");
+    setBitis("");
+  };
+
+  const sil = (idx: number) => {
+    setListe((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const kaydet = async () => {
+    setSaving(true);
+    await onSave(liste);
+    setSaving(false);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+        <div className="px-4 py-3 border-b border-gray-800">
+          <h2 className="text-white font-semibold">Periyot Ayarları</h2>
+          <p className="text-gray-500 text-xs mt-0.5">Süre tablosunda görünecek tarih aralıklarını belirle</p>
+        </div>
+
+        {/* Mevcut periyotlar */}
+        <div className="p-4 space-y-2">
+          {liste.length === 0 && (
+            <p className="text-gray-600 text-sm text-center py-4">Henüz periyot tanımlanmamış</p>
+          )}
+          {liste.map((p, i) => (
+            <div key={i} className="flex items-center justify-between bg-gray-800 rounded-lg px-4 py-2.5">
+              <div className="flex items-center gap-3">
+                <span className="text-gray-500 text-xs w-4 text-right">{i + 1}.</span>
+                <span className="text-white font-mono font-semibold">{periyotKey(p)}</span>
+                <span className="text-gray-500 text-xs">({p.baslangic}. gün – {p.bitis}. gün)</span>
+              </div>
+              <button onClick={() => sil(i)} className="text-red-500 hover:text-red-400 text-xs px-2 py-1 rounded hover:bg-red-500/10 transition-colors">
+                Sil
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {/* Yeni periyot ekle */}
+        <div className="px-4 pb-4 border-t border-gray-800 pt-4">
+          <p className="text-gray-400 text-sm font-medium mb-3">Yeni Periyot Ekle</p>
+          <div className="flex items-end gap-3 flex-wrap">
+            <div>
+              <label className="block text-gray-500 text-xs mb-1">Başlangıç Günü</label>
+              <input
+                type="number" min={1} max={31} value={baslangic}
+                onChange={(e) => { setBaslangic(e.target.value === "" ? "" : Math.min(31, Math.max(1, Number(e.target.value)))); setHata(""); }}
+                placeholder="1"
+                className="w-24 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 text-center"
+              />
+            </div>
+            <span className="text-gray-500 text-lg font-bold mb-2">–</span>
+            <div>
+              <label className="block text-gray-500 text-xs mb-1">Bitiş Günü</label>
+              <input
+                type="number" min={1} max={31} value={bitis}
+                onChange={(e) => { setBitis(e.target.value === "" ? "" : Math.min(31, Math.max(1, Number(e.target.value)))); setHata(""); }}
+                placeholder="7"
+                className="w-24 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 text-center"
+              />
+            </div>
+            <button onClick={ekle}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors">
+              + Ekle
+            </button>
+          </div>
+          {hata && <p className="text-red-400 text-xs mt-2">{hata}</p>}
+        </div>
+
+        {/* Kaydet */}
+        <div className="px-4 pb-4">
+          <button onClick={kaydet} disabled={saving}
+            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-semibold rounded-lg text-sm transition-colors">
+            {saving ? "Kaydediliyor..." : "Değişiklikleri Kaydet"}
+          </button>
+          <p className="text-gray-600 text-xs mt-2 text-center">Kaydetmeden çıkarsanız değişiklikler uygulanmaz</p>
+        </div>
+      </div>
+    </div>
+  );
 }
+
+// ─── Yardımcı Bileşenler ──────────────────────────────────────────────────────
 
 function ModalWrapper({ title, onClose, children, maxW = "max-w-lg" }: { title: string; onClose: () => void; children: React.ReactNode; maxW?: string }) {
   return (
@@ -281,7 +395,13 @@ function SureKisiEkleModal({ onClose, onSave }: { onClose: () => void; onSave: (
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    onSave({ id: Date.now().toString() + Math.random().toString(36).slice(2), ad: f.get("ad") as string, rol: f.get("rol") as string, habboismi: f.get("habboismi") as string, aylar: emptyAylar() });
+    onSave({
+      id: Date.now().toString() + Math.random().toString(36).slice(2),
+      ad: f.get("ad") as string,
+      rol: f.get("rol") as string,
+      habboismi: f.get("habboismi") as string,
+      aylar: emptyAylar(),
+    });
   };
   return (
     <ModalWrapper title="Kişi Ekle" onClose={onClose}>
@@ -325,92 +445,132 @@ function SureKisiDuzenleModal({ kisi, onClose, onSave }: { kisi: SureKisi; onClo
 
 // ─── Süre Giriş Modalı (SureKisi) ─────────────────────────────────────────────
 
-function SureKisiGirModal({ kisi, varsayilanAy, onClose, onSave }: { kisi: SureKisi; varsayilanAy: Ay; onClose: () => void; onSave: (k: SureKisi) => void }) {
+function SureKisiGirModal({ kisi, varsayilanAy, periyotlar, onClose, onSave }: {
+  kisi: SureKisi; varsayilanAy: Ay; periyotlar: Periyot[];
+  onClose: () => void; onSave: (k: SureKisi) => void;
+}) {
   const [ay, setAyState] = useState<Ay>(varsayilanAy);
   const [tur, setTur] = useState<"oda" | "calisma">("oda");
   const [girisMode, setGirisMode] = useState<"gun" | "periyot">("periyot");
   const [gun, setGun] = useState<number>(1);
-  const [periyot, setPeriyot] = useState<Period>("1-7");
+  const [seciliKey, setSeciliKey] = useState<string>(periyotlar[0] ? periyotKey(periyotlar[0]) : "");
   const [sure, setSure] = useState<number>(0);
   const [islem, setIslem] = useState<"ekle" | "ayarla">("ekle");
-  const seciliPeriyot = girisMode === "gun" ? gundenPeriod(gun) : periyot;
-  const mevcutSure = kisi.aylar?.[ay]?.[tur]?.[seciliPeriyot] ?? 0;
+
+  const gunKey = gundenPeriyotKey(gun, periyotlar);
+  const aktifKey = girisMode === "gun" ? (gunKey ?? "") : seciliKey;
+  const mevcutSure = aktifKey ? ((kisi.aylar?.[ay]?.[tur] as Record<string, number>)?.[aktifKey] ?? 0) : 0;
+
   const handleSave = () => {
+    if (!aktifKey) return;
     if (sure === 0 && islem === "ekle") return;
     const guncelKisi = { ...kisi };
     if (!guncelKisi.aylar) guncelKisi.aylar = emptyAylar();
-    if (!guncelKisi.aylar[ay]) guncelKisi.aylar[ay] = { oda: Object.fromEntries(PERIODLAR.map((p) => [p, 0])) as Record<Period, number>, calisma: Object.fromEntries(PERIODLAR.map((p) => [p, 0])) as Record<Period, number> };
-    const mevcut = guncelKisi.aylar[ay][tur][seciliPeriyot] ?? 0;
-    guncelKisi.aylar[ay][tur][seciliPeriyot] = islem === "ekle" ? mevcut + sure : sure;
+    if (!guncelKisi.aylar[ay]) guncelKisi.aylar[ay] = { oda: {}, calisma: {} };
+    const mevcut = (guncelKisi.aylar[ay][tur] as Record<string, number>)[aktifKey] ?? 0;
+    (guncelKisi.aylar[ay][tur] as Record<string, number>)[aktifKey] = islem === "ekle" ? mevcut + sure : sure;
     onSave(guncelKisi);
   };
-  return <SureGirModalUI title={`Süre Gir — ${kisi.ad}`} ay={ay} setAy={setAyState} tur={tur} setTur={setTur} girisMode={girisMode} setGirisMode={setGirisMode} gun={gun} setGun={setGun} periyot={periyot} setPeriyot={setPeriyot} seciliPeriyot={seciliPeriyot} mevcutSure={mevcutSure} sure={sure} setSure={setSure} islem={islem} setIslem={setIslem} onClose={onClose} onSave={handleSave} />;
-}
 
-// ─── Ortak Süre Giriş UI ──────────────────────────────────────────────────────
-
-function SureGirModalUI({ title, ay, setAy, tur, setTur, girisMode, setGirisMode, gun, setGun, periyot, setPeriyot, seciliPeriyot, mevcutSure, sure, setSure, islem, setIslem, onClose, onSave }: {
-  title: string; ay: Ay; setAy: (a: Ay) => void; tur: "oda" | "calisma"; setTur: (t: "oda" | "calisma") => void;
-  girisMode: "gun" | "periyot"; setGirisMode: (m: "gun" | "periyot") => void; gun: number; setGun: (g: number) => void;
-  periyot: Period; setPeriyot: (p: Period) => void; seciliPeriyot: Period; mevcutSure: number;
-  sure: number; setSure: (s: number) => void; islem: "ekle" | "ayarla"; setIslem: (i: "ekle" | "ayarla") => void;
-  onClose: () => void; onSave: () => void;
-}) {
   return (
-    <ModalWrapper title={title} onClose={onClose} maxW="max-w-md">
+    <ModalWrapper title={`Süre Gir — ${kisi.ad}`} onClose={onClose} maxW="max-w-md">
       <div className="space-y-4">
+        {/* Ay seçimi */}
         <div>
           <label className="block text-gray-400 text-sm mb-1">Ay</label>
           <div className="grid grid-cols-4 gap-1.5">
             {AYLAR.map((a) => (
-              <button key={a} onClick={() => setAy(a)} className={`py-1.5 rounded-lg text-xs font-medium transition-colors ${ay === a ? "bg-indigo-600 text-white" : "bg-gray-800 text-gray-400 hover:text-white"}`}>{a.slice(0, 3)}</button>
+              <button key={a} onClick={() => setAyState(a)}
+                className={`py-1.5 rounded-lg text-xs font-medium transition-colors ${ay === a ? "bg-indigo-600 text-white" : "bg-gray-800 text-gray-400 hover:text-white"}`}>
+                {a.slice(0, 3)}
+              </button>
             ))}
           </div>
         </div>
+
+        {/* Oda / Çalışma */}
         <div className="flex gap-2">
           <button onClick={() => setTur("oda")} className={`flex-1 py-2 rounded-lg font-medium text-sm transition-colors ${tur === "oda" ? "bg-blue-600 text-white" : "bg-gray-800 text-gray-400 hover:text-white"}`}>Oda</button>
           <button onClick={() => setTur("calisma")} className={`flex-1 py-2 rounded-lg font-medium text-sm transition-colors ${tur === "calisma" ? "bg-green-600 text-white" : "bg-gray-800 text-gray-400 hover:text-white"}`}>Çalışma</button>
         </div>
+
+        {/* Giriş modu */}
         <div className="flex gap-2">
           <button onClick={() => setGirisMode("periyot")} className={`flex-1 py-2 rounded-lg font-medium text-sm transition-colors ${girisMode === "periyot" ? "bg-gray-600 text-white" : "bg-gray-800 text-gray-400 hover:text-white"}`}>Periyot Seç</button>
           <button onClick={() => setGirisMode("gun")} className={`flex-1 py-2 rounded-lg font-medium text-sm transition-colors ${girisMode === "gun" ? "bg-gray-600 text-white" : "bg-gray-800 text-gray-400 hover:text-white"}`}>Gün Gir</button>
         </div>
+
         {girisMode === "periyot" ? (
           <div>
             <label className="block text-gray-400 text-sm mb-1">Periyot</label>
-            <div className="flex gap-2">
-              {PERIODLAR.map((p) => (
-                <button key={p} onClick={() => setPeriyot(p)} className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors ${periyot === p ? "bg-indigo-600 text-white" : "bg-gray-800 text-gray-400 hover:text-white"}`}>{p}</button>
-              ))}
-            </div>
+            {periyotlar.length === 0 ? (
+              <p className="text-amber-500 text-xs">Henüz periyot tanımlanmamış. Ayarlar sekmesinden ekleyin.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {periyotlar.map((p) => {
+                  const k = periyotKey(p);
+                  return (
+                    <button key={k} onClick={() => setSeciliKey(k)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${seciliKey === k ? "bg-indigo-600 text-white" : "bg-gray-800 text-gray-400 hover:text-white"}`}>
+                      {k}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         ) : (
           <div>
-            <label className="block text-gray-400 text-sm mb-1">Gün <span className="text-gray-600">(otomatik periyot: <span className="text-indigo-400">{seciliPeriyot}</span>)</span></label>
-            <input type="number" min={1} max={31} value={gun} onChange={(e) => setGun(Math.min(31, Math.max(1, Number(e.target.value))))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500" />
+            <label className="block text-gray-400 text-sm mb-1">
+              Gün{" "}
+              <span className="text-gray-600">
+                (otomatik periyot:{" "}
+                <span className={gunKey ? "text-indigo-400" : "text-red-400"}>
+                  {gunKey ?? "eşleşme yok"}
+                </span>)
+              </span>
+            </label>
+            <input type="number" min={1} max={31} value={gun}
+              onChange={(e) => setGun(Math.min(31, Math.max(1, Number(e.target.value))))}
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500" />
+            {!gunKey && <p className="text-amber-500 text-xs mt-1">Bu gün tanımlı bir periyoda denk gelmiyor.</p>}
           </div>
         )}
+
+        {/* Mevcut süre */}
         <div className="bg-gray-800/60 rounded-lg px-3 py-2 flex items-center justify-between">
-          <span className="text-gray-500 text-xs">Mevcut ({ay} / {seciliPeriyot} / {tur === "oda" ? "Oda" : "Çalışma"})</span>
+          <span className="text-gray-500 text-xs">Mevcut ({ay} / {aktifKey || "—"} / {tur === "oda" ? "Oda" : "Çalışma"})</span>
           <span className={`font-mono text-sm font-bold ${tur === "oda" ? "text-blue-400" : "text-green-400"}`}>{fmtSure(mevcutSure)}</span>
         </div>
+
+        {/* Süre girişi */}
         <div>
           <label className="block text-gray-400 text-sm mb-2">Süre</label>
           <SureInput value={sure} onChange={setSure} />
         </div>
+
+        {/* Ekle / Ayarla modu */}
         <div className="flex gap-2">
           <button onClick={() => setIslem("ekle")} className={`flex-1 py-1.5 rounded-lg text-sm transition-colors ${islem === "ekle" ? "bg-emerald-700 text-white" : "bg-gray-800 text-gray-400 hover:text-white"}`}>+ Üstüne Ekle</button>
           <button onClick={() => setIslem("ayarla")} className={`flex-1 py-1.5 rounded-lg text-sm transition-colors ${islem === "ayarla" ? "bg-orange-700 text-white" : "bg-gray-800 text-gray-400 hover:text-white"}`}>= Değeri Ayarla</button>
         </div>
-        {sure > 0 && (
+
+        {sure > 0 && aktifKey && (
           <div className="bg-gray-800/60 rounded-lg px-3 py-2 flex items-center justify-between">
             <span className="text-gray-500 text-xs">Kaydedilecek değer</span>
-            <span className={`font-mono text-sm font-bold ${tur === "oda" ? "text-blue-400" : "text-green-400"}`}>{fmtSure(islem === "ekle" ? mevcutSure + sure : sure)}</span>
+            <span className={`font-mono text-sm font-bold ${tur === "oda" ? "text-blue-400" : "text-green-400"}`}>
+              {fmtSure(islem === "ekle" ? mevcutSure + sure : sure)}
+            </span>
           </div>
         )}
+
         <div className="flex gap-3 pt-1">
           <button onClick={onClose} className="flex-1 py-2 rounded-lg border border-gray-700 text-gray-400 hover:text-white text-sm transition-colors">İptal</button>
-          <button onClick={onSave} disabled={sure === 0 && islem === "ekle"} className="flex-1 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-medium text-sm transition-colors">Kaydet</button>
+          <button onClick={handleSave}
+            disabled={(sure === 0 && islem === "ekle") || !aktifKey}
+            className="flex-1 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-medium text-sm transition-colors">
+            Kaydet
+          </button>
         </div>
       </div>
     </ModalWrapper>
